@@ -4,37 +4,87 @@ import {
 	DATABASE_ID,
 	COLLECTION_ID_MESSAGES,
 } from '../appwriteConfig';
+import { ID, Query } from 'appwrite';
 
 const Room = () => {
 	const [messages, setMessages] = useState([]);
+	const [messageBody, setMessageBody] = useState('');
 
 	useEffect(() => {
 		getMessages();
 	}, []);
 
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		let payload = {
+			body: messageBody,
+		};
+		let response = await databases.createDocument(
+			DATABASE_ID,
+			COLLECTION_ID_MESSAGES,
+			ID.unique(),
+			payload
+		);
+
+		setMessages((prevState) => [response, ...messages]);
+		setMessageBody('');
+		console.log('created', response);
+	};
+
 	const getMessages = async () => {
 		const response = await databases.listDocuments(
 			DATABASE_ID,
-			COLLECTION_ID_MESSAGES
+			COLLECTION_ID_MESSAGES,
+			[Query.orderDesc('$createdAt')]
 		);
 		console.log(response);
 		setMessages(response.documents);
 	};
 
 	return (
-		<div>
-			{messages.map((message) => (
-				<div key={message.$id}>
+		<main className='container'>
+			<div className='room--container'>
+				<form
+					id='message--form'
+					onSubmit={handleSubmit}>
 					<div>
-						<p>{message.$createdAt}</p>
+						<textarea
+							required
+							maxLength='1000'
+							placeholder='Say something...'
+							onChange={(e) => {
+								setMessageBody(e.target.value);
+							}}
+							value={messageBody}></textarea>
 					</div>
 
-					<div>
-						<span>{message.body}</span>
+					<div className='send-btn--wrapper'>
+						<input
+							className='btn btn--secondary'
+							type='submit'
+							value='Send'
+						/>
 					</div>
+				</form>
+				<div>
+					{messages.map((message) => (
+						<div
+							key={message.$id}
+							className='message--wrapper'>
+							<div className='message--header'>
+								<small className='message-timestamp'>
+									{message.$createdAt}
+								</small>
+							</div>
+
+							<div className='message--body'>
+								<span>{message.body}</span>
+							</div>
+						</div>
+					))}
 				</div>
-			))}
-		</div>
+			</div>
+		</main>
 	);
 };
 
