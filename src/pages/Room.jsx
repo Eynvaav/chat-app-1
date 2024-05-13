@@ -7,8 +7,10 @@ import client, {
 import { ID, Query } from 'appwrite';
 import { Trash2 } from 'react-feather';
 import Header from '../components/Header';
+import { useAuth } from '../utils/AuthContext';
 
 const Room = () => {
+	const { user } = useAuth();
 	const [messages, setMessages] = useState([]);
 	const [messageBody, setMessageBody] = useState('');
 
@@ -49,6 +51,8 @@ const Room = () => {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		let payload = {
+			user_id: user.$id,
+			username: user.name,
 			body: messageBody,
 		};
 		let response = await databases.createDocument(
@@ -116,9 +120,17 @@ const Room = () => {
 							key={message.$id}
 							className='message--wrapper'>
 							<div className='message--header'>
-								<small className='message-timestamp'>
-									{new Date(message.$createdAt).toLocaleString()}
-								</small>
+								<p>
+									{message?.username ? (
+										<span>{message.username}</span>
+									) : (
+										<span>unknown user</span>
+									)}
+									<small className='message-timestamp'>
+										{new Date(message.$createdAt).toLocaleString()}
+									</small>
+								</p>
+
 								<Trash2
 									className='delete--btn'
 									onClick={() => {
